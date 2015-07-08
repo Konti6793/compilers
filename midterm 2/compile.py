@@ -9,81 +9,13 @@
 #  ****************************************************************
 #
 
-
+import macros
 
 from random import randint
 exec(open('parse.py').read())
 exec(open('interpret.py').read())
 exec(open('optimize.py').read())
 exec(open('machine.py').read())
-
-
-
-
-
-
-
-ADD_RESULT      = "0"
-ADD_LEFT        = "1"
-ADD_RIGHT       = "2"
-COPY_FROM       = "3"
-COPY_TO         = "4"
-OUTPUT_REG      = "5"
-PROGRAM_COUNTER = "6"
-STACK_TOP       = "7"
-PC2             = "8"
-HEAP_START      = "10"
-
-
-def copy( aFrom, aTo  ):
-    if str( aFrom ) == str( aTo ):
-        return [ 'doc skiping_copy_same_' + str( aFrom ) ]
-    return [\
-        'set ' + COPY_FROM + ' ' + str( aFrom ), \
-        'set ' + COPY_TO + ' ' + str( aTo ), \
-        'copy'
-    ]
-
-def arrayRead( aFrom, index,  aTo  ):
-
-    return [\
-        'doc arrayRead_aFrom:('+ str(aFrom ) + '+index:' + str(index) + ')_aTo' + str( aTo), \
-        'set ' + COPY_FROM + ' ' + str(index), \
-        'set ' + COPY_TO + ' ' + ADD_RIGHT, \
-        'copy ',\
-        'set ' + ADD_LEFT + ' ' + str( aFrom ), \
-        'add ', \
-        'set ' + COPY_FROM + ' ' + ADD_RESULT, \
-        'set ' + COPY_TO + ' ' + COPY_FROM, \
-        'copy', \
-        'set ' + COPY_TO + ' ' + str( aTo ), \
-        'copy',\
-        'doc DONE arrayRead_aFrom:('+ str(aFrom ) + '+index:' + str(index) + ')_aTo' + str( aTo)
-    ]
-
-def arrayWrite( aFrom,  aTo, index  ):
-
-    return [\
-        'doc arrayWrite_aFrom:('+ str(aFrom ) + '+index:' + str(index) + ')_aTo' + str( aTo), \
-        'set ' + ADD_LEFT + ' ' + str( aTo ), \
-        'set ' + ADD_RIGHT + ' ' + str( index ), \
-        'add ', \
-        'set ' + COPY_FROM + ' ' + ADD_RESULT, \
-        'set ' + COPY_TO + ' ' + COPY_TO, \
-        'copy', \
-        'set ' + COPY_FROM + ' ' + str( aFrom ), \
-        'copy', \
-        'doc DONE arrayWrite_aFrom:('+ str(aFrom ) + '+index:' + str(index) + ')_aTo' + str( aTo)
-    ]
-
-def add( aLeft, aRight, aResult ):
-    r =  [ 'doc ' + 'add_' + str( aLeft ) + '_' + str( aRight ) + '_to_' + str( aResult )]
-    r += copy( aLeft, ADD_LEFT )
-    r += copy( aRight, ADD_RIGHT )
-    r += [ 'add']
-    r += copy( ADD_RESULT, aResult )
-    return r
-
 
 Leaf = str
 Node = dict
@@ -115,7 +47,7 @@ def compileExpression(env, e, heap):
                 ( rightInstrs,  rightResult, nextHeap ) = compileExpression( env, rightNode, nextHeap )
                 result = nextHeap + 1
 
-                instsPlus = add( leftResult,  rightResult, result  )
+                instsPlus = macros.add( leftResult,  rightResult, result  )
                 return (leftInstrs + rightInstrs + instsPlus, result, result+1)
 
             if label == "Array":
@@ -126,7 +58,7 @@ def compileExpression(env, e, heap):
                 ( indexInstrs, indexResult, nextHeap ) = compileExpression( env, indexNode, heap )
                 result = nextHeap + 1
 
-                arrayInstrs = arrayRead( varAddress, indexResult, result )
+                arrayInstrs = macros.arrayRead( varAddress, indexResult, result )
 
                 return ( indexInstrs + arrayInstrs, result, result + 1 )
 
@@ -153,9 +85,9 @@ def compileProgram(env, s, heap = 10): # Set initial heap default address.
                 result = nextHeap + 1
                 varName = children[0]["Variable"][ 0 ]
                 env[ varName ] = result
-                assignInstrs  = arrayWrite( v0Result, result, 0 ) # should be optimized to copy
-                assignInstrs += arrayWrite( v1Result, result, 1 )
-                assignInstrs += arrayWrite( v2Result, result, 2 )
+                assignInstrs  = macros.arrayWrite( v0Result, result, 0 ) # should be optimized to copy
+                assignInstrs += macros.arrayWrite( v1Result, result, 1 )
+                assignInstrs += macros.arrayWrite( v2Result, result, 2 )
                 heap = heap + 6
                 (env, instsP, heap) = compileProgram(env, children[ 4 ], heap)
                 return (env, v0Instrs + v1Instrs + v2Instrs +  assignInstrs + instsP, heap)

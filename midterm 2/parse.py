@@ -99,7 +99,7 @@ def program(tmp, top = True):
         return r
 
 def tokenize( s ):
-    tokens = re.split(r"(\s+|assign|:=|,|print|\+|for|{|}|;|@|true|false|[a-z][A-Za-z0-9]*|\[|\])", s)
+    tokens = re.split(r"(\s+|assign|:=|,|print|\+|for|{|}|;|@|true|false|\+|[a-z][A-Za-z0-9]*|\[|\])", s)
     tokens = [t for t in tokens if not t.isspace() and not t == ""]
     return tokens
 
